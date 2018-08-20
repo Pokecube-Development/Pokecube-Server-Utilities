@@ -85,10 +85,12 @@ public class TurnBasedManager
     {
         if (!PokeServerUtils.config.turnbased || event.getPokemob().getAI() == null) return;
         AITurnAttack attack = new AITurnAttack(event.getPokemob());
+        // Search for existing AIAttack
         for (IAIRunnable ai : event.getPokemob().getAI().aiTasks)
         {
             if (ai instanceof AIAttack)
             {
+                // Replace the old attack AI with the turn based variant.
                 AIAttack old = (AIAttack) ai;
                 event.getPokemob().getAI().aiTasks.remove(old);
                 attack.setMutex(old.getMutex());
@@ -102,9 +104,11 @@ public class TurnBasedManager
     @SubscribeEvent
     public void onAttackUse(MoveUse.ActualMoveUse.Init event)
     {
-        IPokemob target = CapabilityPokemob.getPokemobFor(event.getTarget());
-        if (!PokeServerUtils.config.turnbased || target == null) return;
+        if (!PokeServerUtils.config.turnbased) return;
 
+        IPokemob target = CapabilityPokemob.getPokemobFor(event.getTarget());
+        // Only apply this if the target is also a pokemob.
+        if (target == null) return;
         // Clear the no item use
         if (event.getUser().getCombatState(CombatStates.NOITEMUSE))
         {
@@ -130,7 +134,5 @@ public class TurnBasedManager
             affected.tick();
             processing.clear();
         }
-
     }
-
 }
