@@ -1,5 +1,9 @@
 package pokecube.serverutils;
 
+import java.util.List;
+
+import com.google.common.collect.Lists;
+
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
@@ -9,14 +13,19 @@ import pokecube.core.ai.thread.aiRunnables.combat.AIAttack;
 import pokecube.core.events.CommandAttackEvent;
 import pokecube.core.events.InitAIEvent;
 import pokecube.core.events.MoveUse;
+import pokecube.core.events.OngoingTickEvent;
 import pokecube.core.interfaces.IPokemob;
+import pokecube.core.interfaces.capabilities.CapabilityAffected;
 import pokecube.core.interfaces.capabilities.CapabilityPokemob;
+import pokecube.core.interfaces.entity.IOngoingAffected;
+import pokecube.core.interfaces.entity.IOngoingAffected.IOngoingEffect;
 import pokecube.core.interfaces.pokemob.ai.CombatStates;
 import pokecube.serverutils.ai.pokemob.AITurnAttack;
 import thut.api.entity.ai.IAIRunnable;
 
 public class TurnBasedManager
 {
+    private List<IOngoingEffect> processing = Lists.newArrayList();
 
     public TurnBasedManager()
     {
@@ -38,6 +47,18 @@ public class TurnBasedManager
     public void onRightclick(PlayerInteractEvent.RightClickItem event)
     {
 
+    }
+
+    @SubscribeEvent
+    public void onStatusEffect(OngoingTickEvent event)
+    {
+        if (!PokeServerUtils.config.turnbased) return;
+        // We deal with ticking these ourself in the turn based combat stuff.
+        if (!processing.contains(event.effect))
+        {
+            event.setCanceled(true);
+        }
+        else processing.remove(event.effect);
     }
 
     @SubscribeEvent
@@ -83,11 +104,14 @@ public class TurnBasedManager
     {
         IPokemob target = CapabilityPokemob.getPokemobFor(event.getTarget());
         if (!PokeServerUtils.config.turnbased || target == null) return;
+
+        // Clear the no item use
         if (event.getUser().getCombatState(CombatStates.NOITEMUSE))
         {
             event.setCanceled(true);
             event.getUser().setCombatState(CombatStates.NOITEMUSE, false);
         }
+        // Reset task's orders
         for (IAIRunnable ai : event.getUser().getAI().aiTasks)
         {
             if (ai instanceof AITurnAttack)
@@ -98,6 +122,15 @@ public class TurnBasedManager
                 break;
             }
         }
+        // Tick status effects
+        IOngoingAffected affected = CapabilityAffected.getAffected(event.getTarget());
+        if (affected != null)
+        {
+            processing.addAll(affected.getEffects());
+            affected.tick();
+            processing.clear();
+        }
+
     }
 
 }
