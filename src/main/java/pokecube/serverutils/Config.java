@@ -5,6 +5,7 @@ import java.io.File;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.client.event.ConfigChangedEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import pokecube.serverutils.starters.LegacyStarterManager;
 import thut.core.common.config.ConfigBase;
 import thut.core.common.config.Configure;
 
@@ -14,6 +15,7 @@ public class Config extends ConfigBase
     private static final String DIMCTRL                  = "dimensionControl";
     private static final String CBTMODE                  = "battlemode";
     private static final String MOBCTRL                  = "mobcontrol";
+    private static final String MISC                     = "misc";
 
     @Configure(category = CAPTURE)
     int                         maxCaptureLevelNormal    = 100;
@@ -39,6 +41,9 @@ public class Config extends ConfigBase
     @Configure(category = MOBCTRL)
     boolean                     pokemobBlacklistenabled  = false;
 
+    @Configure(category = MISC)
+    int                         legacyStarters           = 3;
+
     public Config()
     {
         super(null);
@@ -61,6 +66,7 @@ public class Config extends ConfigBase
             PokeServerUtils.instance.dimensionList.add(i);
         PokeServerUtils.turnbasedManager.disable();
         if (turnbased) PokeServerUtils.turnbasedManager.enable();
+        LegacyStarterManager.legacyStarterCount = legacyStarters;
     }
 
     @SubscribeEvent

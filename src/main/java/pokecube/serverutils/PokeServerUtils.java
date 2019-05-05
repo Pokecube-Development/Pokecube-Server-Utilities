@@ -30,6 +30,8 @@ import pokecube.core.interfaces.IPokemob;
 import pokecube.core.interfaces.PokecubeMod;
 import pokecube.core.interfaces.capabilities.CapabilityPokemob;
 import pokecube.core.items.pokecubes.EntityPokecube;
+import pokecube.serverutils.starters.LegacyStarterManager;
+import pokecube.serverutils.starters.LegacyStarterManager.LegacyOptIn;
 import thut.core.common.commands.CommandConfig;
 
 @Mod(modid = PokeServerUtils.MODID, name = "Pokecube Server Utils", version = PokeServerUtils.VERSION, dependencies = "required-after:pokecube", acceptableRemoteVersions = "*", acceptedMinecraftVersions = PokeServerUtils.MCVERSIONS)
@@ -56,12 +58,14 @@ public class PokeServerUtils
     {
         config = new Config(PokecubeCore.core.getPokecubeConfig(e).getConfigFile());
         MinecraftForge.EVENT_BUS.register(this);
+        if (LegacyStarterManager.legacyStarterCount > 0) MinecraftForge.EVENT_BUS.register(new LegacyStarterManager());
     }
 
     @EventHandler
     public void serverLoad(FMLServerStartingEvent event)
     {
         event.registerServerCommand(new CommandConfig("pokeutilssettings", config));
+        if (LegacyStarterManager.legacyStarterCount > 0) event.registerServerCommand(new LegacyOptIn());
     }
 
     @SubscribeEvent
