@@ -38,7 +38,6 @@ import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent;
 import pokecube.core.PokecubeItems;
 import pokecube.core.database.PokedexEntry;
 import pokecube.core.entity.pokemobs.genetics.GeneticsManager;
-import pokecube.core.events.StarterEvent;
 import pokecube.core.handlers.playerdata.PlayerPokemobCache;
 import pokecube.core.interfaces.IPokecube;
 import pokecube.core.interfaces.IPokecube.PokecubeBehavior;
@@ -270,20 +269,6 @@ public class LegacyStarterManager
         evt.player.sendMessage(new TextComponentString(String.format("You may pick up to %s of them.", legacies)));
     }
 
-    @SubscribeEvent
-    public void PickStarterPre(StarterEvent.Pre evt)
-    {
-        System.out.println(evt.pick);
-        System.out.println(evt.player);
-    }
-
-    @SubscribeEvent
-    public void PickStarter(StarterEvent.Pick evt)
-    {
-        System.out.println(evt.pick);
-        System.out.println(evt.player);
-    }
-
     public static void loadData(UUID uuid)
     {
         PlayerPokemobCache legacyCache = new PlayerPokemobCache();
@@ -329,6 +314,50 @@ public class LegacyStarterManager
             catch (IOException e)
             {
                 e.printStackTrace();
+            }
+        }
+    }
+
+    public static void cleanLegacyFolder()
+    {
+        PlayerPokemobCache legacyCache;
+        World world = FMLCommonHandler.instance().getMinecraftServerInstance().getWorld(0);
+        ISaveHandler saveHandler = world.getSaveHandler();
+        File legacyFolder = new File(saveHandler.getWorldDirectory(), "legacy");
+        for (File dir : legacyFolder.listFiles())
+        {
+            if (dir.isDirectory())
+            {
+                for (File file : dir.listFiles())
+                {
+                    legacyCache = new PlayerPokemobCache();
+                    if (!file.getName().contains(legacyCache.dataFileName()))
+                    {
+                        file.delete();
+                    }
+                    else
+                    {
+                        try
+                        {
+                            FileInputStream fileinputstream = new FileInputStream(file);
+                            NBTTagCompound nbttagcompound = CompressedStreamTools.readCompressed(fileinputstream);
+                            fileinputstream.close();
+                            legacyCache.readFromNBT(nbttagcompound.getCompoundTag("Data"));
+                            if (legacyCache.cache.isEmpty())
+                            {
+                                file.delete();
+                            }
+                        }
+                        catch (IOException e)
+                        {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                if (dir.listFiles().length == 0)
+                {
+                    dir.delete();
+                }
             }
         }
     }

@@ -17,6 +17,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.Mod.Instance;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLServerStartedEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.eventhandler.Event.Result;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -66,6 +67,17 @@ public class PokeServerUtils
     {
         event.registerServerCommand(new CommandConfig("pokeutilssettings", config));
         if (LegacyStarterManager.legacyStarterCount > 0) event.registerServerCommand(new LegacyOptIn());
+    }
+
+    @EventHandler
+    public void serverLoad(FMLServerStartedEvent event)
+    {
+        if (config.cleanLegacies)
+        {
+            config.cleanLegacies = false;
+            config.save();
+            LegacyStarterManager.cleanLegacyFolder();
+        }
     }
 
     @SubscribeEvent

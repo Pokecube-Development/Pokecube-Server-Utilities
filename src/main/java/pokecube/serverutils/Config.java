@@ -44,6 +44,9 @@ public class Config extends ConfigBase
     @Configure(category = MISC)
     int                         legacyStarters           = 3;
 
+    @Configure(category = MISC)
+    public boolean              cleanLegacies            = true;
+
     public Config()
     {
         super(null);
