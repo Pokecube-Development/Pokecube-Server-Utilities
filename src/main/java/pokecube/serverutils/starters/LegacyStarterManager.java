@@ -4,11 +4,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.logging.Level;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import net.minecraft.command.CommandBase;
@@ -68,7 +72,7 @@ public class LegacyStarterManager
         @Override
         public String getUsage(ICommandSender sender)
         {
-            return "/legacy_options <pick|forfit>";
+            return "/legacy_options pick <optional|page>";
         }
 
         @Override
@@ -86,14 +90,48 @@ public class LegacyStarterManager
                 ITextComponent message = new TextComponentString("Pokemobs: ");
                 sender.sendMessage(message);
                 message = new TextComponentString("");
+
+                List<ItemStack> choices = Lists.newArrayList();
+
                 for (Entry<Integer, ItemStack> entry : pokemobs.cache.entrySet())
                 {
                     Integer id = entry.getKey();
                     boolean wasDeleted = pokemobs.genesDeleted.contains(id);
                     if (wasDeleted) continue;
-
                     ItemStack stack = entry.getValue();
+                    stack.getTagCompound().setInteger("_cache_uid_", id);
+                    choices.add(stack);
+                }
+
+                int start = 0;
+                int end = choices.size();
+
+                Collections.sort(choices, new Comparator<ItemStack>()
+                {
+                    @Override
+                    public int compare(ItemStack o1, ItemStack o2)
+                    {
+                        return o1.getDisplayName().compareTo(o2.getDisplayName());
+                    }
+                });
+
+                if (end > 45)
+                {
+                    if (args.length == 1) throw new CommandException("Include page argument, too many mobs..");
+                    int page = parseInt(args[1]) - 1;
+                    page = Math.max(0, page);
+                    int maxPages = choices.size() / 45;
+                    page = Math.min(page, maxPages);
+                    start = 45 * page;
+                    end = Math.min(end, start + 45);
+                    sender.sendMessage(new TextComponentString("Page " + (page + 1)));
+                }
+
+                for (int i = start; i < end; i++)
+                {
+                    ItemStack stack = choices.get(i);
                     String command;
+                    Integer id = stack.getTagCompound().getInteger("_cache_uid_");
                     command = "/legacy_options restore " + id;
                     NBTTagCompound tag = stack.getTagCompound().copy();
                     tag.removeTag(TagNames.POKEMOB);
@@ -113,11 +151,6 @@ public class LegacyStarterManager
                     }
                 }
                 sender.sendMessage(message);
-                break;
-            case "forfit":
-                cache.remove(player.getUniqueID());
-                player.getEntityData().setBoolean("_checked_legacy_", false);
-                player.sendMessage(new TextComponentString("You have forfit your legacy starter option."));
                 break;
             case "restore":
                 int uid = Integer.parseInt(args[1]);
@@ -263,8 +296,7 @@ public class LegacyStarterManager
                 NBTTagCompound nbttagcompound = CompressedStreamTools.readCompressed(fileinputstream);
                 fileinputstream.close();
                 legacyCache.readFromNBT(nbttagcompound.getCompoundTag("Data"));
-                if (!legacyCache.cache.isEmpty()) cache.put(uuid, legacyCache);
-                else
+                if (legacyCache.cache.isEmpty())
                 {
                     file.delete();
                 }
@@ -274,6 +306,7 @@ public class LegacyStarterManager
                 e.printStackTrace();
             }
         }
+        cache.put(uuid, legacyCache);
     }
 
     public static void saveData(UUID uuid)
