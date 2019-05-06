@@ -47,6 +47,7 @@ import pokecube.core.interfaces.capabilities.CapabilityPokemob;
 import pokecube.core.items.pokecubes.PokecubeManager;
 import pokecube.core.utils.TagNames;
 import pokecube.core.utils.Tools;
+import thut.api.entity.genetics.Alleles;
 import thut.api.entity.genetics.IMobGenetics;
 
 public class LegacyStarterManager
@@ -194,6 +195,23 @@ public class LegacyStarterManager
                 IMobGenetics newGenes = newEntity.getCapability(IMobGenetics.GENETICS_CAP, null);
                 newGenes.getAlleles().putAll(oldGenes.getAlleles());
                 GeneticsManager.handleEpigenetics(newPokemob);
+
+                parse:
+                for (int i = 0; i < 4; i++)
+                {
+                    String move = newPokemob.getMove(i);
+                    String[] learnables = entry.getMoves().toArray(new String[0]);
+                    for (String s : learnables)
+                    {
+                        if (s.equals(move)) continue parse;
+                    }
+                    Alleles gene = newGenes.getAlleles().get(GeneticsManager.MOVESGENE);
+                    newPokemob.setMove(i, null);
+                    String[] moves = gene.getExpressed().getValue();
+                    gene.getAlleles()[0].setValue(moves);
+                    gene.getAlleles()[1].setValue(moves);
+                }
+
                 newPokemob.onGenesChanged();
 
                 // Sync entity data, UUID and location.
@@ -227,7 +245,6 @@ public class LegacyStarterManager
                 break;
             }
         }
-
     }
 
     public static int legacyStarterCount = 3;
