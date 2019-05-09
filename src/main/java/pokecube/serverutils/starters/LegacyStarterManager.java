@@ -196,6 +196,14 @@ public class LegacyStarterManager
                 newGenes.getAlleles().putAll(oldGenes.getAlleles());
                 GeneticsManager.handleEpigenetics(newPokemob);
 
+                // Set all the genes to the same as the expressed gene.
+                for (Alleles gene : newGenes.getAlleles().values())
+                {
+                    gene.getAlleles()[0].setValue(gene.getExpressed().getValue());
+                    gene.getAlleles()[1].setValue(gene.getExpressed().getValue());
+                }
+
+                // Cleanup moves, to ensure nothing OP gets transfered over.
                 parse:
                 for (int i = 0; i < 4; i++)
                 {
@@ -341,6 +349,9 @@ public class LegacyStarterManager
         World world = FMLCommonHandler.instance().getMinecraftServerInstance().getWorld(0);
         ISaveHandler saveHandler = world.getSaveHandler();
         File legacyFolder = new File(saveHandler.getWorldDirectory(), "legacy");
+
+        if (!legacyFolder.exists()) legacyFolder.mkdirs();
+
         for (File dir : legacyFolder.listFiles())
         {
             if (dir.isDirectory())
