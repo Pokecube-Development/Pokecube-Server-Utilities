@@ -21,7 +21,6 @@ import net.minecraftforge.fml.common.event.FMLServerStartedEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.eventhandler.Event.Result;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import pokecube.core.PokecubeCore;
 import pokecube.core.database.Database;
 import pokecube.core.database.PokedexEntry;
 import pokecube.core.events.CaptureEvent;
@@ -57,7 +56,7 @@ public class PokeServerUtils
     @EventHandler
     public void preInit(FMLPreInitializationEvent e)
     {
-        config = new Config(PokecubeCore.core.getPokecubeConfig(e).getConfigFile());
+        config = new Config(PokecubeMod.core.getPokecubeConfig(e).getConfigFile());
         MinecraftForge.EVENT_BUS.register(this);
         if (LegacyStarterManager.legacyStarterCount > 0) MinecraftForge.EVENT_BUS.register(new LegacyStarterManager());
     }

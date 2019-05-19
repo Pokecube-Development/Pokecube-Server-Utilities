@@ -8,13 +8,13 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import pokecube.core.PokecubeCore;
 import pokecube.core.ai.thread.aiRunnables.combat.AIAttack;
 import pokecube.core.events.OngoingTickEvent;
 import pokecube.core.events.pokemob.InitAIEvent;
 import pokecube.core.events.pokemob.combat.CommandAttackEvent;
 import pokecube.core.events.pokemob.combat.MoveUse;
 import pokecube.core.interfaces.IPokemob;
+import pokecube.core.interfaces.PokecubeMod;
 import pokecube.core.interfaces.capabilities.CapabilityAffected;
 import pokecube.core.interfaces.capabilities.CapabilityPokemob;
 import pokecube.core.interfaces.entity.IOngoingAffected;
@@ -34,13 +34,13 @@ public class TurnBasedManager
     public void enable()
     {
         MinecraftForge.EVENT_BUS.register(this);
-        PokecubeCore.MOVE_BUS.register(this);
+        PokecubeMod.MOVE_BUS.register(this);
     }
 
     public void disable()
     {
         MinecraftForge.EVENT_BUS.unregister(this);
-        PokecubeCore.MOVE_BUS.unregister(this);
+        PokecubeMod.MOVE_BUS.unregister(this);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
