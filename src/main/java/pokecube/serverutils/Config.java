@@ -3,8 +3,8 @@ package pokecube.serverutils;
 import java.io.File;
 
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.client.event.ConfigChangedEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import pokecube.serverutils.starters.LegacyStarterManager;
 import thut.core.common.config.ConfigBase;
 import thut.core.common.config.Configure;
