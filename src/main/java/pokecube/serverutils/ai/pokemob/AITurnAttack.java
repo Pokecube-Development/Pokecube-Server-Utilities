@@ -1,6 +1,6 @@
 package pokecube.serverutils.ai.pokemob;
 
-import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.world.World;
 import pokecube.core.ai.thread.aiRunnables.combat.AIAttack;
 import pokecube.core.interfaces.IPokemob;
@@ -12,15 +12,15 @@ public class AITurnAttack extends AIAttack
     public boolean hasOrders       = false;
     public boolean executingOrders = false;
 
-    public AITurnAttack(IPokemob par1EntityLiving)
+    public AITurnAttack(IPokemob par1MobEntity)
     {
-        super(par1EntityLiving);
+        super(par1MobEntity);
     }
 
     @Override
     public void doMainThreadTick(World world)
     {
-        EntityLivingBase target = attacker.getAttackTarget();
+        LivingEntity target = attacker.getAttackTarget();
         AITurnAttack task = null;
         IPokemob targetMob = CapabilityPokemob.getPokemobFor(target);
         task:

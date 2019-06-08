@@ -7,9 +7,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
@@ -17,7 +17,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.Mod.Instance;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import pokecube.core.database.Database;
@@ -53,7 +53,7 @@ public class PokeServerUtils
     }
 
     @EventHandler
-    public void preInit(FMLPreInitializationEvent e)
+    public void preInit(FMLCommonSetupEvent e)
     {
         config = new Config(PokecubeMod.core.getPokecubeConfig(e).getConfigFile());
         MinecraftForge.EVENT_BUS.register(this);
@@ -90,9 +90,9 @@ public class PokeServerUtils
             evt.setCanceled(true);
             evt.setResult(Result.DENY);
             Entity catcher = ((EntityPokecube) evt.pokecube).shootingEntity;
-            if (catcher instanceof EntityPlayer)
+            if (catcher instanceof PlayerEntity)
             {
-                ((EntityPlayer) catcher).sendMessage(new TextComponentTranslation("pokecube.denied"));
+                ((PlayerEntity) catcher).sendMessage(new TranslationTextComponent("pokecube.denied"));
             }
             evt.pokecube.entityDropItem(((EntityPokecube) evt.pokecube).getItem(), (float) 0.5);
             evt.pokecube.setDead();
@@ -129,7 +129,7 @@ public class PokeServerUtils
     @SubscribeEvent
     public void mobTickEvent(LivingUpdateEvent event)
     {
-        IPokemob pokemob = CapabilityPokemob.getPokemobFor(event.getEntityLiving());
+        IPokemob pokemob = CapabilityPokemob.getPokemobFor(event.getMobEntity());
         if (config.pokemobBlacklistenabled && pokemob != null)
         {
             PokedexEntry entry = pokemob.getPokedexEntry();
@@ -141,7 +141,7 @@ public class PokeServerUtils
                     if (pokemob.getPokemonOwner() != null)
                     {
                         pokemob.getPokemonOwner().sendMessage(
-                                new TextComponentString(TextFormatting.RED + "You are not allowed to use that."));
+                                new StringTextComponent(TextFormatting.RED + "You are not allowed to use that."));
                     }
                     break;
                 }
@@ -163,7 +163,7 @@ public class PokeServerUtils
                     if (evt.pokemob.getPokemonOwner() != null)
                     {
                         evt.pokemob.getPokemonOwner().sendMessage(
-                                new TextComponentString(TextFormatting.RED + "You are not allowed to use that."));
+                                new StringTextComponent(TextFormatting.RED + "You are not allowed to use that."));
                     }
                     break;
                 }
@@ -171,7 +171,7 @@ public class PokeServerUtils
         }
 
         if (!config.dimsEnabled) return;
-        int dim = evt.world.provider.getDimension();
+        int dim = evt.world.dimension.getDimension();
         boolean inList = dimensionList.contains(dim);
         if (config.whitelist)
         {

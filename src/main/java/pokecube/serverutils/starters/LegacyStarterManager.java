@@ -17,16 +17,16 @@ import com.google.common.collect.Maps;
 
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommandSender;
+import net.minecraft.command.ICommandSource;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompressedStreamTools;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.ClickEvent.Action;
 import net.minecraft.world.World;
@@ -70,15 +70,15 @@ public class LegacyStarterManager
         }
 
         @Override
-        public String getUsage(ICommandSender sender)
+        public String getUsage(ICommandSource sender)
         {
             return "/legacy_options pick <optional|page>";
         }
 
         @Override
-        public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException
+        public void execute(MinecraftServer server, ICommandSource sender, String[] args) throws CommandException
         {
-            EntityPlayer player = getCommandSenderAsPlayer(sender);
+            PlayerEntity player = getCommandSenderAsPlayer(sender);
             if (!cache.containsKey(player.getUniqueID())) throw new CommandException("You may not use this command.");
             if (args.length == 0) throw new CommandException(getUsage(sender));
             PlayerPokemobCache pokemobs = cache.get(player.getUniqueID());
@@ -87,9 +87,9 @@ public class LegacyStarterManager
             switch (args[0])
             {
             case "pick":
-                ITextComponent message = new TextComponentString("Pokemobs: ");
+                ITextComponent message = new StringTextComponent("Pokemobs: ");
                 sender.sendMessage(message);
-                message = new TextComponentString("");
+                message = new StringTextComponent("");
 
                 List<ItemStack> choices = Lists.newArrayList();
 
@@ -99,7 +99,7 @@ public class LegacyStarterManager
                     boolean wasDeleted = pokemobs.genesDeleted.contains(id);
                     if (wasDeleted) continue;
                     ItemStack stack = entry.getValue();
-                    stack.getTagCompound().setInteger("_cache_uid_", id);
+                    stack.getTag().setInteger("_cache_uid_", id);
                     choices.add(stack);
                 }
 
@@ -124,20 +124,20 @@ public class LegacyStarterManager
                     page = Math.min(page, maxPages);
                     start = 45 * page;
                     end = Math.min(end, start + 45);
-                    sender.sendMessage(new TextComponentString("Page " + (page + 1)));
+                    sender.sendMessage(new StringTextComponent("Page " + (page + 1)));
                 }
 
                 for (int i = start; i < end; i++)
                 {
                     ItemStack stack = choices.get(i);
                     String command;
-                    Integer id = stack.getTagCompound().getInteger("_cache_uid_");
+                    Integer id = stack.getTag().getInteger("_cache_uid_");
                     command = "/legacy_options restore " + id;
-                    NBTTagCompound tag = stack.getTagCompound().copy();
-                    tag.removeTag(TagNames.POKEMOB);
+                    CompoundNBT tag = stack.getTag().copy();
+                    tag.remove(TagNames.POKEMOB);
                     ItemStack copy = stack.copy();
-                    copy.setTagCompound(tag);
-                    tag = copy.writeToNBT(new NBTTagCompound());
+                    copy.setTag(tag);
+                    tag = copy.writeToNBT(new CompoundNBT());
                     ClickEvent click = new ClickEvent(Action.RUN_COMMAND, command);
                     ITextComponent sub = stack.getTextComponent();
                     sub.getStyle().setClickEvent(click);
@@ -147,7 +147,7 @@ public class LegacyStarterManager
                     if (size > 32000)
                     {
                         sender.sendMessage(message);
-                        message = new TextComponentString("");
+                        message = new StringTextComponent("");
                     }
                 }
                 sender.sendMessage(message);
@@ -168,7 +168,7 @@ public class LegacyStarterManager
                     saveData(player.getUniqueID());
                     PokecubeMod.log(Level.WARNING, "Error with restoring pokemob from stack");
                     PokecubeMod.log(Level.WARNING, "Stack: " + stack);
-                    PokecubeMod.log(Level.WARNING, "Stack Tag: " + stack.getTagCompound());
+                    PokecubeMod.log(Level.WARNING, "Stack Tag: " + stack.getTag());
                     return;
                 }
 
@@ -181,9 +181,9 @@ public class LegacyStarterManager
                 newEntity.setUniqueId(oldEntity.getUniqueID());
 
                 // Sync tags besides the ones that define species and form.
-                NBTTagCompound tag = oldPokemob.writePokemobData();
-                tag.getCompoundTag(TagNames.OWNERSHIPTAG).removeTag(TagNames.POKEDEXNB);
-                tag.getCompoundTag(TagNames.VISUALSTAG).removeTag(TagNames.FORME);
+                CompoundNBT tag = oldPokemob.writePokemobData();
+                tag.getCompound(TagNames.OWNERSHIPTAG).remove(TagNames.POKEDEXNB);
+                tag.getCompound(TagNames.VISUALSTAG).remove(TagNames.FORME);
                 newPokemob.readPokemobData(tag);
 
                 // clear items
@@ -283,15 +283,15 @@ public class LegacyStarterManager
                 checked = true;
             }
         }
-        evt.player.getEntityData().setBoolean("_checked_legacy_", hasLegacy);
+        evt.player.getEntityData().putBoolean("_checked_legacy_", hasLegacy);
         if (!hasLegacy) return;
 
         int legacies = evt.player.getEntityData().getInteger("_legacy_starters_");
         if (legacies <= 0) return;
 
         evt.player.sendMessage(
-                new TextComponentString("Try using /legacy_options pick, to select some of your old pokemobs."));
-        evt.player.sendMessage(new TextComponentString(String.format("You may pick up to %s of them.", legacies)));
+                new StringTextComponent("Try using /legacy_options pick, to select some of your old pokemobs."));
+        evt.player.sendMessage(new StringTextComponent(String.format("You may pick up to %s of them.", legacies)));
     }
 
     public static void loadData(UUID uuid)
@@ -303,9 +303,9 @@ public class LegacyStarterManager
             try
             {
                 FileInputStream fileinputstream = new FileInputStream(file);
-                NBTTagCompound nbttagcompound = CompressedStreamTools.readCompressed(fileinputstream);
+                CompoundNBT CompoundNBT = CompressedStreamTools.readCompressed(fileinputstream);
                 fileinputstream.close();
-                legacyCache.readFromNBT(nbttagcompound.getCompoundTag("Data"));
+                legacyCache.readFromNBT(CompoundNBT.getCompound("Data"));
                 if (legacyCache.cache.isEmpty())
                 {
                     file.delete();
@@ -326,14 +326,14 @@ public class LegacyStarterManager
         File file = getFileForUUID(uuid.toString(), legacyCache.dataFileName());
         if (file != null)
         {
-            NBTTagCompound nbttagcompound = new NBTTagCompound();
-            legacyCache.writeToNBT(nbttagcompound);
-            NBTTagCompound nbttagcompound1 = new NBTTagCompound();
-            nbttagcompound1.setTag("Data", nbttagcompound);
+            CompoundNBT CompoundNBT = new CompoundNBT();
+            legacyCache.writeToNBT(CompoundNBT);
+            CompoundNBT CompoundNBT1 = new CompoundNBT();
+            CompoundNBT1.setTag("Data", CompoundNBT);
             try
             {
                 FileOutputStream fileoutputstream = new FileOutputStream(file);
-                CompressedStreamTools.writeCompressed(nbttagcompound1, fileoutputstream);
+                CompressedStreamTools.writeCompressed(CompoundNBT1, fileoutputstream);
                 fileoutputstream.close();
             }
             catch (IOException e)
@@ -368,9 +368,9 @@ public class LegacyStarterManager
                         try
                         {
                             FileInputStream fileinputstream = new FileInputStream(file);
-                            NBTTagCompound nbttagcompound = CompressedStreamTools.readCompressed(fileinputstream);
+                            CompoundNBT CompoundNBT = CompressedStreamTools.readCompressed(fileinputstream);
                             fileinputstream.close();
-                            legacyCache.readFromNBT(nbttagcompound.getCompoundTag("Data"));
+                            legacyCache.readFromNBT(CompoundNBT.getCompound("Data"));
                             if (legacyCache.cache.isEmpty())
                             {
                                 file.delete();
