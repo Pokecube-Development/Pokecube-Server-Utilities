@@ -82,7 +82,7 @@ public class LegacyStarterManager
             if (!cache.containsKey(player.getUniqueID())) throw new CommandException("You may not use this command.");
             if (args.length == 0) throw new CommandException(getUsage(sender));
             PlayerPokemobCache pokemobs = cache.get(player.getUniqueID());
-            int legacies = player.getEntityData().getInteger("_legacy_starters_");
+            int legacies = player.getEntityData().getInt("_legacy_starters_");
             if (legacies <= 0) throw new CommandException("You may not use this command.");
             switch (args[0])
             {
@@ -131,7 +131,7 @@ public class LegacyStarterManager
                 {
                     ItemStack stack = choices.get(i);
                     String command;
-                    Integer id = stack.getTag().getInteger("_cache_uid_");
+                    Integer id = stack.getTag().getInt("_cache_uid_");
                     command = "/legacy_options restore " + id;
                     CompoundNBT tag = stack.getTag().copy();
                     tag.remove(TagNames.POKEMOB);
@@ -286,7 +286,7 @@ public class LegacyStarterManager
         evt.player.getEntityData().putBoolean("_checked_legacy_", hasLegacy);
         if (!hasLegacy) return;
 
-        int legacies = evt.player.getEntityData().getInteger("_legacy_starters_");
+        int legacies = evt.player.getEntityData().getInt("_legacy_starters_");
         if (legacies <= 0) return;
 
         evt.player.sendMessage(
