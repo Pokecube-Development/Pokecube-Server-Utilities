@@ -99,7 +99,7 @@ public class LegacyStarterManager
                     boolean wasDeleted = pokemobs.genesDeleted.contains(id);
                     if (wasDeleted) continue;
                     ItemStack stack = entry.getValue();
-                    stack.getTag().setInteger("_cache_uid_", id);
+                    stack.getTag().putInt("_cache_uid_", id);
                     choices.add(stack);
                 }
 
@@ -160,7 +160,7 @@ public class LegacyStarterManager
                 ItemStack stack = pokemobs.cache.remove(uid);
                 pokemobs.inPC.remove(uid);
                 pokemobs.genesDeleted.remove(uid);
-                player.getEntityData().setInteger("_legacy_starters_", legacies - 1);
+                player.getEntityData().putInt("_legacy_starters_", legacies - 1);
 
                 IPokemob oldPokemob = PokecubeManager.itemToPokemob(stack, player.getEntityWorld());
                 if (oldPokemob == null)
@@ -278,7 +278,7 @@ public class LegacyStarterManager
                     PlayerPokemobCache legacyCache = cache.get(evt.player.getUniqueID());
                     int legacies = Math.min(legacyStarterCount,
                             legacyCache.cache.size() - legacyCache.genesDeleted.size());
-                    evt.player.getEntityData().setInteger("_legacy_starters_", legacies);
+                    evt.player.getEntityData().putInt("_legacy_starters_", legacies);
                 }
                 checked = true;
             }
