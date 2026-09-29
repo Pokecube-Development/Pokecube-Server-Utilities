@@ -1,111 +1,142 @@
-buildscript {
-    repositories {
-        jcenter()
-        maven {
-            name = "Forge"
-            url = "http://files.minecraftforge.net/maven"
-        }
-        maven {
-            name = "Sonatype"
-            url = 'https://oss.sonatype.org/content/groups/public'
-        }
-    }
-    dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
-    }
-}
-
 plugins {
-    id 'com.matthewprenger.cursegradle' version '1.0.9'
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.neoforged.moddev' version '2.0.147'
+    id 'idea'
+}
+
+tasks.named('wrapper', Wrapper).configure {
+    distributionType = Wrapper.DistributionType.BIN
+}
+
+version = mod_version
+group = mod_group_id
+
+sourceSets.main.resources {
+    srcDir('src/generated/resources')
+
+    exclude("src/generated/**/.cache")
 }
 
 repositories {
     maven {
-        name = "CurseForge"
-        url = "https://minecraft.curseforge.com/api/maven/"
+        url "https://chocolateminecraft.com/maven"
+        name "Xaero's Maven"
+    }
+    maven { url 'https://repo.bluecolored.de/releases' }
+    maven {
+        url "https://cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
+    mavenLocal()
+}
+
+base {
+    archivesName = mod_id
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+neoForge {
+    version = project.neo_version
+
+    parchment {
+        mappingsVersion = project.parchment_mappings_version
+        minecraftVersion = project.parchment_minecraft_version
+    }
+
+    runs {
+        client {
+            client()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        server {
+            server()
+            programArgument '--nogui'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        gameTestServer {
+            type = "gameTestServer"
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        data {
+            data()
+            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
     }
 }
 
-apply plugin: 'net.minecraftforge.gradle.forge'
-//Only edit below this line, the above code adds and enables the nessasary things for Forge to be setup.
-
-
-version = "${version_minecraft}-${version_compile}"
-group= ""
-archivesBaseName = "${compile_name}"
-
-repositories {
-    maven {
-        //JEI files
-        url = "http://dvs1.progwml6.com/files/maven"
-    }
-    maven {
-        // location of a maven mirror for JEI files, as a fallback
-        name = "ModMaven"
-        url = "http://modmaven.k-4u.nl"
-    }
+configurations {
+    runtimeClasspath.extendsFrom localRuntime
 }
 
 dependencies {
-    //Thut Core
-    deobfCompile "thutcore:thutcore:${version_minecraft}:${version_thutcore}"
-    //Thut Wearables
-    deobfCompile "thut-wearables:thut-wearables:release:deobf"
-    //Open Computers API
-    deobfCompile "li.cil.oc:OpenComputers:MC1.12.+:api"
-    
-    //Pokecube Core
-    deobfCompile "pokecube-core:pokecube-core:release:deobf"
-    //Pokecube Revival
-    deobfCompile "pokecube-revival:pokecube-revival:release:deobf"
-    //Pokecube Mobs
-    deobfCompile "pokecube-mobs:pokecube-mobs:release:deobf"
+    implementation "curse.maven:pokecube-${version_pokecube}"
+    implementation "curse.maven:thutessentials-${version_thutessentials}"
+
+    // Xaeros for showing arceus claims
+    implementation "xaero.map:xaeroworldmap-neoforge-${version_xaeros}"
+
+    // bluemap for also arceus claims
+    compileOnly "de.bluecolored:bluemap-api:${version_bluemap}"
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-minecraft {
-    version = "${version_long}"
-    runDir = "run"
-    mappings = "${version_mappings}"
-    useDepAts = true
-    
-    replace "@VERSION@", project.version_compile
-    replaceIn "Reference.java"
+var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            loader_version_range   : loader_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+    ]
+    inputs.properties replaceProperties
+    expand replaceProperties
+    from "src/main/templates"
+    into "build/generated/sources/modMetadata"
 }
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
 
-task deobfJar(type: Jar) {
-    from sourceSets.main.output
-    classifier = 'deobf'
-}
-
-artifacts {
-    archives deobfJar
-}
-
-jar {
-    manifest {
-        attributes "FMLAT": "${at_file}"
-    }   
-}
-
-processResources
-{
-    // this will ensure that this task is redone when the versions change.
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
-
-    // replace stuff in mcmod.info, nothing else
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-                
-        // replace version and mcversion
-        expand 'version':project.version, 'mcversion':project.minecraft.version
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
     }
-        
-    // copy everything else, thats not the mcmod.info
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
+    repositories {
+        maven {
+            url "file://${project.projectDir}/repo"
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8' 
+}
+
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
     }
 }
