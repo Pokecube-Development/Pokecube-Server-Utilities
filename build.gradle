@@ -87,8 +87,16 @@ configurations {
     runtimeClasspath.extendsFrom localRuntime
 }
 
+repositories {
+    // Adds the 'libs' folder in the project directory as a flat directory
+    flatDir {
+        dir 'libs'
+    }
+}
+
 dependencies {
-    implementation "curse.maven:pokecube-${version_pokecube}"
+//    implementation "curse.maven:pokecube-${version_pokecube}"
+    implementation "pokecube:pokecube-aio-1.21.1-4.1.5"
     implementation "curse.maven:thutessentials-${version_thutessentials}"
 
     // Xaeros for showing arceus claims
@@ -96,6 +104,9 @@ dependencies {
 
     // bluemap for also arceus claims
     compileOnly "de.bluecolored:bluemap-api:${version_bluemap}"
+
+    // Compile against thutapi, including isn't needed, as pokecube does so
+    implementation "thut.api:thutapi-1.0.0"
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
