@@ -1,12 +1,9 @@
 package pokecube.server.compat;
 
-import net.minecraft.network.chat.Component;
 import pokecube.legends.handlers.ForgeEventHandlers;
 import pokecube.server.compat.bluemap.BlueMapCompat;
 import pokecube.server.compat.thutessentials.ThutEssentialsCompat;
 import pokecube.server.compat.xaeros.XaerosCompat;
-
-import java.util.Locale;
 
 public class Compat
 {
@@ -35,6 +32,8 @@ public class Compat
                     if (name.contains("/gym/")) return true;
                     if (name.contains("/pokecenter/")) return true;
                     if (name.contains("pokecube_legends:temples/surface/elite_four"))
+                        return true;
+                    if (name.contains("pokecube:scattered/pokecenter_start/building"))
                         return true;
                 }
             }
